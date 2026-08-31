@@ -1,4 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0
+/*
+ * SPIRIT phone CM5 board DTS.
+ *
+ * Includes the raspberrypi/linux rpi-6.12.y board file (present in the
+ * Yocto kernel tree, not in this layer) plus spirit-phone-cm5.dtsi.
+ * GitHub Actions dtc CI stubs bcm2712-rpi-5-b.dts; see KERNEL.md.
+ *
+ * Untested on SPIRIT hardware.
+ */
 /dts-v1/;
 
 #include "bcm2712-rpi-5-b.dts"
