@@ -28,6 +28,12 @@ This repo exists to focus on that **base system**.
 In other words this is not a "phone OS" but a **hardware enablement layer**
 that ensures Linux distributions can work at all on SPIRIT.
 
+## Kernel / device tree status
+
+Bring-up of carrier peripherals is tracked in [`KERNEL.md`](KERNEL.md)
+(issues #4-#9, dtc CI for #11). Overlay nodes are `status = "disabled"` and
+**untested on hardware**. Do not treat this image as a complete phone BSP yet.
+
 ## Requirements
 - Linux host (or WSL2 on Windows / Docker Desktop on macOS)
 - Docker or Podman installed
@@ -181,7 +187,7 @@ utility needs to be used to put the eMMC into flash mode.
 1. Copy the image to the eMMC.
     ```sh
     $ bmaptool copy build/tmp-glibc/deploy/images/spirit-phone-cm5/core-image-minimal-spirit-phone-cm5.rootfs.wic.bz2 /dev/sdX
-    bmaptool: info: discovered bmap file 'build/tmp/deploy/images/raspberrypi5/core-image-minimal-raspberrypi5.rootfs.wic.bmap'
+    bmaptool: info: discovered bmap file 'build/tmp-glibc/deploy/images/raspberrypi5/core-image-minimal-raspberrypi5.rootfs.wic.bmap'
     bmaptool: info: discovered bmap file 'build/tmp-glibc/deploy/images/raspberrypi5/core-image-minimal-raspberrypi5.rootfs.wic.bmap'
     bmaptool: info: block map format version 2.0
     bmaptool: info: 43707 blocks of size 4096 (170.7 MiB), mapped 16919 blocks (66.1 MiB or 38.7%)
