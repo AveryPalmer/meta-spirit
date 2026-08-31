@@ -1,0 +1,16 @@
+/*
+ * CI-only stub for raspberrypi/linux arch/arm64/boot/dts/broadcom/bcm2712-rpi-5-b.dts
+ *
+ * Full DTB generation happens in the Yocto linux-raspberrypi build, which
+ * copies our DTS into the kernel tree where the real include exists.
+ * GitHub Actions cannot fetch that tree here, so this stub only provides a
+ * root node so dtc can syntax-check SPIRIT overlay content.
+ *
+ * Do not use this stub for hardware boots.
+ */
+/dts-v1/;
+
+/ {
+	compatible = "brcm,bcm2712", "brcm,bcm2712-rpi-5-b";
+	model = "CI stub (not a real BCM2712 board)";
+};
