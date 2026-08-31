@@ -4,6 +4,7 @@ FILESEXTRAPATHS:prepend := "${THISDIR}/files/${MACHINE}:"
 SRC_URI:append:spirit-phone-cm5 = " \
 	file://spirit-phone-cm5.dtsi \
         file://bcm2712-spirit-phone-cm5.dts \
+        file://spirit-phone-cm5.cfg \
 	"
 
 do_configure:append:spirit-phone-cm5() {
