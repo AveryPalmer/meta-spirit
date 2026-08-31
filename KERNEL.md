@@ -26,7 +26,7 @@ connector.
 | Overlay | `.../spirit-phone-cm5.dtsi` | Disabled placeholders for #4-#8 |
 | Kernel fragment | `.../spirit-phone-cm5.cfg` | `=m` for USB modem + audio codecs |
 | Recipe | `linux-raspberrypi_%.bbappend` | SRC_URI for DTS + `.cfg` |
-| dtc CI | `.github/workflows/dtc.yml` | Addresses #11 |
+| dtc check | `scripts/check-dts.sh` + `.github/dtc-workflow.yml` | Addresses #11 |
 
 ## Issue map (#4-#9)
 
@@ -129,15 +129,18 @@ Camera and screen sheets were not given kernel fragments in this increment
 
 ## dtc CI (issue #11)
 
-- Workflow: [`.github/workflows/dtc.yml`](.github/workflows/dtc.yml)
-- Script: [`scripts/check-dts.sh`](scripts/check-dts.sh)
-- Runs `dtc -I dts -o /dev/null` on `bcm2712-spirit-phone-cm5.dts` (after `cpp`)
-  and on the DTSI as a wrapped fragment.
+- Checker: [`scripts/check-dts.sh`](scripts/check-dts.sh) (install `device-tree-compiler`, run locally).
+- Workflow YAML: [`.github/dtc-workflow.yml`](.github/dtc-workflow.yml).
+  GitHub's Contents API rejected writes to `.github/workflows/` (needs the
+  `workflow` token scope). Enable Actions by copying that file to
+  `.github/workflows/dtc.yml`.
+- Stub include: [`.github/dtc-stubs/bcm2712-rpi-5-b.dts`](.github/dtc-stubs/bcm2712-rpi-5-b.dts).
+- Runs `cpp` then `dtc -I dts -O dtb -o /dev/null` on
+  `bcm2712-spirit-phone-cm5.dts` and a wrapped `spirit-phone-cm5.dtsi`.
 - **Include limitation:** the board DTS `#include "bcm2712-rpi-5-b.dts"` lives
-  in raspberrypi/linux, not this layer. CI uses
-  [`.github/dtc-stubs/bcm2712-rpi-5-b.dts`](.github/dtc-stubs/bcm2712-rpi-5-b.dts)
-  so SPIRIT overlay syntax is still checked. Full compile with RPi includes is
-  the Yocto `linux-raspberrypi` build (not run in this CI; needs 50-100 GB).
+  in raspberrypi/linux, not this layer. CI stubs it so SPIRIT overlay syntax is
+  still checked. Full compile with RPi includes is the Yocto
+  `linux-raspberrypi` build (not run in this CI; needs 50-100 GB).
 - A repo `pre-commit` hook was requested on #11 but is not added here.
 
 ## Kernel fragment caveats
