@@ -1,0 +1,48 @@
+# Intended GitHub Actions workflow for dtc (upstream issue #11).
+#
+# Copy this file to .github/workflows/dtc.yml to enable it. The GitHub
+# token used to push this branch cannot write under .github/workflows/
+# (missing workflow scope). scripts/check-dts.sh is the checker either way.
+#
+# Limitation: bcm2712-spirit-phone-cm5.dts includes the kernel's
+# bcm2712-rpi-5-b.dts, which is not in this layer. CI substitutes
+# .github/dtc-stubs/bcm2712-rpi-5-b.dts so we still catch SPIRIT-side
+# syntax errors. Full compile with RPi includes is done by Yocto, not CI.
+name: dtc
+
+on:
+  push:
+    paths:
+      - "recipes-kernel/linux/files/**/*.dts"
+      - "recipes-kernel/linux/files/**/*.dtsi"
+      - ".github/workflows/dtc.yml"
+      - ".github/dtc-workflow.yml"
+      - ".github/dtc-stubs/**"
+      - "scripts/check-dts.sh"
+  pull_request:
+    paths:
+      - "recipes-kernel/linux/files/**/*.dts"
+      - "recipes-kernel/linux/files/**/*.dtsi"
+      - ".github/workflows/dtc.yml"
+      - ".github/dtc-workflow.yml"
+      - ".github/dtc-stubs/**"
+      - "scripts/check-dts.sh"
+
+permissions:
+  contents: read
+
+jobs:
+  dtc:
+    name: Device Tree syntax check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install device-tree-compiler
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y device-tree-compiler gcc
+
+      - name: Run dtc syntax check
+        run: bash scripts/check-dts.sh
