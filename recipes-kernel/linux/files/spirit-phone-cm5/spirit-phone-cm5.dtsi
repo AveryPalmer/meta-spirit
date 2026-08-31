@@ -1,15 +1,34 @@
 /*
- * TODO: Move this node under the correct I2C controller once the bus is known.
- * For now it's defined at root level with status="disabled" so it compiles
- * but has no runtime effect.
+ * SPIRIT phone CM5 carrier overlay.
+ *
+ * Nodes below are placeholders: correct compatible strings, status disabled
+ * until CM5 pinmux / I2C / I2S / USB port mapping is taken from the carrier
+ * schematic. Do not invent BCM2712 GPIO numbers. SPIRIT-org/SPIRIT EDA-kicad
+ * names nets (AUDIO_SCL, USB_DP, ...) but does not document SoC GPIO indices.
+ *
+ * Untested on hardware. Tracker: SPIRIT-org/meta-spirit#3.
  */
 
-&{/} {
+/ {
+	/*
+	 * TPS65023-family PMIC placeholder (issue #4).
+	 *
+	 * Hardware issue tracks TPS650250RHBR. There is no upstream driver or
+	 * binding for tps650250 in mainline, raspberrypi/linux rpi-6.12.y, or
+	 * TI's kernel. Closest upstream is the tps65020/21/23 family
+	 * (Documentation/devicetree/bindings/regulator/tps65023.txt,
+	 * compatible = "ti,tps65023"). Do not fake a tps650250 driver.
+	 *
+	 * The current SPIRIT power schematic (EDA-kicad/power.kicad_sch)
+	 * instantiates TPS65023BRSBR, which is that family. Still TBD
+	 * which I2C bus and which BCM2712 GPIOs (INT_N, HOT_RESET_N, ...).
+	 *
+	 * Move this node under the correct I2C controller once the bus is
+	 * known. Address in the tps65023 example binding is 0x48.
+	 */
 	spirit_pmic: spirit-pmic {
 		compatible = "ti,tps65023";
 		status = "disabled";
-
-		/* Address 0x48 - will need proper reg when moved under I2C bus */
 
 		regulators {
 			VDCDC1 {
@@ -34,5 +53,98 @@
 			};
 		};
 	};
-};
 
+	/*
+	 * BQ25792 charger (issue #5). Binding: ti,bq25703a.yaml
+	 * compatible = "ti,bq25792", I2C address 0x6b (binding const).
+	 *
+	 * Schematic nets: SCL, SDA, ~{INT}, ~{CE}. CE is noted as "any
+	 * remaining CM GPIO". No BCM2712 GPIO number. Interrupt parent TBD.
+	 *
+	 * Driver (MFD_BQ257XX / CHARGER_BQ257XX / REGULATOR_BQ257XX) is not
+	 * in linux-raspberrypi 6.12; it landed in mainline ~6.18. DT node
+	 * is still useful so a later kernel can bind it. Parent I2C bus TBD.
+	 */
+	bq25792: charger {
+		compatible = "ti,bq25792";
+		status = "disabled";
+		/* TODO: move under the CM5 I2C controller; reg = <0x6b>; */
+		/* TODO: interrupt-parent + interrupts for ~{INT} */
+		/* TODO: charge-enable GPIO for ~{CE} once pinmux is known */
+	};
+
+	/*
+	 * TLV320AIC3204 codec (issue #6). Binding: ti,tlv320aic32x4.yaml
+	 * compatible = "ti,tlv320aic32x4". Typical I2C address 0x18; confirm
+	 * ADDR pins on the carrier before enabling.
+	 *
+	 * Schematic nets (no BCM2712 GPIO numbers):
+	 *   AUDIO_SCL, AUDIO_SDA, AUDIO_MCLK, AUDIO_BCLK_I2S,
+	 *   AUDIO_WCLK_I2S, AUDIO_SOUND_DATA, AUDIO_RESET.
+	 * GPIO/MFP5: schematic says "connect to any remaining gpio".
+	 *
+	 * Required by binding once enabled: clocks/clock-names = "mclk",
+	 * iov-supply, and either ldoin-supply or av-supply+dv-supply.
+	 */
+	tlv320aic3204: audio-codec {
+		compatible = "ti,tlv320aic32x4";
+		#sound-dai-cells = <0>;
+		status = "disabled";
+		/* TODO: I2C parent + reg (datasheet default 0x18) */
+		/* TODO: clocks / clock-names = "mclk" (AUDIO_MCLK pinmux) */
+		/* TODO: reset-gpios for AUDIO_RESET */
+		/* TODO: I2S CPU DAI link (AUDIO_BCLK_I2S / WCLK / SOUND_DATA) */
+	};
+
+	/*
+	 * SPH0645LM4H-B digital MEMS mic (issue #7).
+	 *
+	 * There is no sph0645-specific DT binding. The mic is I2S, no control
+	 * bus; the matching upstream binding is invensense,ics43432
+	 * (Documentation/devicetree/bindings/sound/invensense,ics43432.yaml,
+	 * CONFIG_SND_SOC_ICS43432). Community RPi overlays exist but are not
+	 * upstream.
+	 *
+	 * Schematic nets: AUDIO_BCLK_I2S, AUDIO_WCLK_I2S, AUDIO_MIC_DATA.
+	 * SELECT is wired for the left channel. BCM2712 I2S pinmux TBD.
+	 */
+	sph0645_dmic: digital-mic {
+		compatible = "invensense,ics43432";
+		#sound-dai-cells = <0>;
+		status = "disabled";
+		/* TODO: audio-graph / simple-audio-card link to BCM2712 I2S */
+	};
+
+	/*
+	 * Quectel EG25-G USB LTE modem (issue #8).
+	 *
+	 * This is a USB 2.0 High-Speed device, not a custom SoC bus.
+	 * Expected USB interface (Quectel EG25-G / EC25 family):
+	 *   VID:PID 2c7c:0125
+	 *   USB_DP / USB_DM / USB_VBUS / USB_BOOT on the GSM-GPS sheet
+	 *   Host drivers: option (CONFIG_USB_SERIAL_OPTION -> /dev/ttyUSB*)
+	 *                 qmi_wwan (CONFIG_USB_NET_QMI_WWAN -> wwan / cdc-wdm)
+	 *
+	 * Target SKU is EG25GGB-256-SGNS (maintainer). Current schematic
+	 * still shows EG25GGC-128-SGNS; same USB identity.
+	 *
+	 * Dual LTE (issue #9): hardware / symbol libs include
+	 * EC25VFA-512-STD. That part is unused/DNP. Describe one EG25 USB
+	 * modem only. Do not add a second EC25 node.
+	 *
+	 * Optional module lines PWRKEY, RESET_N, W_DISABLE# exist on the
+	 * footprint but have no documented BCM2712 GPIO. USB host port on
+	 * the CM5 connector is also TBD; enumeration does not require a
+	 * DT child once the USB controller is up.
+	 */
+	eg25_usb_modem: usb-modem {
+		compatible = "usb2c7c,0125";
+		status = "disabled";
+		/* TODO: parent USB hub/port on the CM5 USB tree */
+		/* TODO: PWRKEY / RESET_N / W_DISABLE# GPIOs if wired */
+	};
+
+	/*
+	 * EC25VFA-512-STD (issue #9): unused / DNP. Not instantiated.
+	 */
+};
